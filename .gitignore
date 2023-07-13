@@ -11,6 +11,5 @@ build/
 *.egg
 *.egg-info
 /.scraper-beta
-/WebtoonScraper/webtoon.ipynb
-**/webtoon
 token.txt
+codes.ipynb
