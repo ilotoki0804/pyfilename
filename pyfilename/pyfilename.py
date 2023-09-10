@@ -59,11 +59,12 @@ class EmptyStringError(Exception):
 def is_vaild_file_name(
     name: str,
 ) -> bool:
+    str_table = list(map(chr, TRANSLATE_TABLE_REPLACEMENT))
     return (
-        all(char not in TRANSLATE_TABLE_REPLACEMENT for char in name)
+        all(char not in str_table for char in name)
         and name.upper()[:3] not in NOT_ALLOWED_NAMES
         and name.upper()[:4] not in NOT_ALLOWED_NAMES
-        and name.endswith('.')
+        and not name.endswith('.')
     )
     # ...or return translate_to_safe_name(name) == name  # 훨씬 느림
 
