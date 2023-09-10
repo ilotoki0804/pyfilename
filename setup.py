@@ -1,6 +1,7 @@
 from setuptools import setup, find_packages
 import re
 from pathlib import Path
+from pyfilename import __version__
 
 long_description = '이 설명은 최신 버전이 아닐 수 있습니다. 만약 최신 버전을 확인하고 싶으시다면 [여기](https://github.com/ilotoki0804/pyfilename)를 참고하세요.\n'
 long_description += Path('README.md').read_text(encoding='utf-8')
@@ -10,7 +11,7 @@ long_description = re.sub(r'!\[(.+?)\]\((images\/.+?)\)', repl, long_description
 
 setup(
     name='pyfilename',
-    version='0.1.0',
+    version=__version__,
     description='filename utility',
     author='ilotoki0804',
     author_email='ilotoki0804@gmail.com',
@@ -18,7 +19,8 @@ setup(
     long_description_content_type='text/markdown',
     license='MIT',
     url='https://github.com/ilotoki0804/pyfilename',
-    install_requires=Path('requirements.txt').read_text().split(),
+    # install_requires=Path('requirements.txt').read_text().split(),
+    install_requires=[],
     packages=find_packages(exclude=[]),
     keywords=['filename'],
     python_requires='>=3.10',

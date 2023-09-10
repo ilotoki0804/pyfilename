@@ -17,5 +17,4 @@ else:
         is_vaild_file_name, safe_name_to_original_name, translate_to_safe_path_name, translate_to_safe_name,
     )
 
-if __name__ == '__main__':
-    print('Testing codes.')
+__version__ = "0.2.0"

@@ -13,3 +13,4 @@ build/
 /.scraper-beta
 token.txt
 codes.ipynb
+python_path.txt
