@@ -67,8 +67,7 @@ def is_vaild_file_name(
     str_table = list(map(chr, TRANSLATE_TABLE_REPLACEMENT))
     return (
         all(char not in str_table for char in name)
-        and name.upper()[:3] not in NOT_ALLOWED_NAMES
-        and name.upper()[:4] not in NOT_ALLOWED_NAMES
+        and name.upper() not in NOT_ALLOWED_NAMES
         and not name.endswith('.')
     )
     # ...or return translate_to_safe_name(name) == name  # 훨씬 느림
@@ -209,7 +208,7 @@ def translate_to_safe_name(
     if not processed:
         raise EmptyStringError(f'After processing, the string is empty. (input name: {name})')
 
-    if processed.upper()[:3] in NOT_ALLOWED_NAMES or processed.upper()[:4] in NOT_ALLOWED_NAMES:
+    if processed.upper() in NOT_ALLOWED_NAMES:
         processed += '_'
 
     if consecutive_char is not None:
