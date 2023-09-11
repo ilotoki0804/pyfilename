@@ -11,12 +11,14 @@ from typing import Literal
 import logging
 from pathlib import Path
 from typing import overload, Final
+from enum import Enum
 
 __all__ = (
     "TRANSLATE_TABLE_FULLWIDTH", "TRANSLATE_TABLE_REPLACEMENT", "NOT_ALLOWED_NAMES",
-    "DOT_REMOVE", "DOT_REPLACE", "DOT_NO_CORRECTION", "FOLLOWING_DOT_REPLACEMENT",
-    "MODE_FULLWIDTH", "MODE_USE_REPLACEMENT_CHAR", "MODE_REMOVE",
-    "CHAR_SPACE", "CHAR_DOUBLE_QUOTATION_MARK", "CHAR_WHITE_QUESTION_MARK", "CHAR_RED_QUESTION_MARK",
+    # "DOT_REMOVE", "DOT_REPLACE", "DOT_NO_CORRECTION", "FOLLOWING_DOT_REPLACEMENT",
+    # "MODE_FULLWIDTH", "MODE_USE_REPLACEMENT_CHAR", "MODE_REMOVE",
+    # "CHAR_SPACE", "CHAR_DOUBLE_QUOTATION_MARK", "CHAR_WHITE_QUESTION_MARK", "CHAR_RED_QUESTION_MARK",
+    "DotHandlingPolicy", "TextMode", "ReplacementCharacter",
     "EmptyStringError",
     "is_vaild_file_name", "safe_name_to_original_name", "translate_to_safe_path_name", "translate_to_safe_name",
 )
@@ -35,21 +37,24 @@ NOT_ALLOWED_NAMES = {
     "LPT1", "LPT¹", "LPT2", "LPT²", "LPT3", "LPT³", "LPT4", "LPT5", "LPT6", "LPT7", "LPT8", "LPT9",
 }
 
-DOT_REMOVE = 'dot_remove'
-DOT_REPLACE = 'dot_replace'
-DOT_NO_CORRECTION = 'dot_no_correction'
-FOLLOWING_DOT_REPLACEMENT = {DOT_REPLACE: '．', DOT_NO_CORRECTION: '.'}
-CorrectFollowingDot = Literal['dot_remove', 'dot_replace', 'dot_no_correction']
 
-MODE_FULLWIDTH = 'mode_fullwidth'
-MODE_USE_REPLACEMENT_CHAR = 'mode_use_replacement_char'
-MODE_REMOVE = 'mode_remove'
-TextModes = Literal['mode_fullwidth', 'mode_use_replacement_char', 'mode_remove']
+class DotHandlingPolicy(Enum):
+    DOT_REMOVE = 'dot_remove'
+    DOT_REPLACE = 'dot_replace'
+    DOT_NO_CORRECTION = 'dot_no_correction'
 
-CHAR_SPACE: Final = ' '
-CHAR_DOUBLE_QUOTATION_MARK: Final = '⁇'
-CHAR_WHITE_QUESTION_MARK: Final = '❔'
-CHAR_RED_QUESTION_MARK: Final = '❓'
+
+class TextMode(Enum):
+    MODE_FULLWIDTH = 'mode_fullwidth'
+    MODE_USE_REPLACEMENT_CHAR = 'mode_use_replacement_char'
+    MODE_REMOVE = 'mode_remove'
+
+
+class ReplacementCharacter(Enum):
+    CHAR_SPACE: Final = ' '
+    CHAR_DOUBLE_QUOTATION_MARK: Final = '⁇'
+    CHAR_WHITE_QUESTION_MARK: Final = '❔'
+    CHAR_RED_QUESTION_MARK: Final = '❓'
 
 
 class EmptyStringError(Exception):
@@ -105,12 +110,12 @@ def safe_name_to_original_name(
 
 def translate_to_safe_path_name(
     path: str | Path,
-    mode: TextModes = MODE_FULLWIDTH,
+    mode: TextMode = TextMode.MODE_FULLWIDTH,
     *,
     length_check: bool = True,
     html_unescape: bool = True,
-    replacement_char: str = CHAR_SPACE,
-    correct_following_dot: CorrectFollowingDot = DOT_REPLACE,
+    replacement_char: str | ReplacementCharacter = ReplacementCharacter.CHAR_SPACE,
+    correct_following_dot: DotHandlingPolicy = DotHandlingPolicy.DOT_REPLACE,
     consecutive_char: str | None = None,
 ) -> str | Path:
     r"""
@@ -148,11 +153,11 @@ def translate_to_safe_path_name(
 
 def translate_to_safe_name(
     name: str,
-    mode: TextModes = MODE_FULLWIDTH,
+    mode: TextMode = TextMode.MODE_FULLWIDTH,
     *,
     html_unescape: bool = True,
-    replacement_char: str = CHAR_SPACE,
-    correct_following_dot: CorrectFollowingDot = DOT_REPLACE,
+    replacement_char: str | ReplacementCharacter = ReplacementCharacter.CHAR_SPACE,
+    correct_following_dot: DotHandlingPolicy = DotHandlingPolicy.DOT_REPLACE,
     consecutive_char: str | None = None,
 ) -> str:
     """파일명 혹은 디렉토리명에 사용할 수 없는 글자를 사용할 수 있는 글자로 변경합니다.
@@ -172,7 +177,7 @@ def translate_to_safe_name(
         html_unescape:
 
         correct_following_dot:
-            윈도우에서는 파일 이름 맨 끝에 
+            윈도우에서는 파일 이름 맨 끝에 점이 오는 것을 금지합니다.
 
         replacement_char:
             만약 mode가 MODE_USE_REPLACEMENT_CHAR이면 사용할 수 없는 모든 글자가 replacement_char로 변환됩니다.
@@ -185,16 +190,21 @@ def translate_to_safe_name(
     """
     processed = html.unescape(name) if html_unescape else name
 
-    processed = processed.translate(TRANSLATE_TABLE_FULLWIDTH if mode == MODE_FULLWIDTH else TRANSLATE_TABLE_REPLACEMENT)
+    processed = processed.translate(TRANSLATE_TABLE_FULLWIDTH if mode == TextMode.MODE_FULLWIDTH else TRANSLATE_TABLE_REPLACEMENT)
 
     # 윈도우에서는 앞뒤에 space가 있을 수 없기에 strip이 필요하다.
-    processed = processed.replace('\x00', replacement_char).strip()
+    if isinstance(replacement_char, str):
+        processed = processed.replace('\x00', replacement_char).strip()
+    elif isinstance(replacement_char, ReplacementCharacter):
+        processed = processed.replace('\x00', replacement_char.value).strip()
+    else:
+        raise TypeError(f'Unexpected type of replacement_char: {type(replacement_char)}')
 
     if correct_following_dot and processed.endswith('.'):
-        if correct_following_dot == DOT_REMOVE:
+        if correct_following_dot == DotHandlingPolicy.DOT_REMOVE:
             processed = processed.rstrip('.')
-        else:
-            processed = processed.removesuffix('.') + FOLLOWING_DOT_REPLACEMENT[correct_following_dot]
+        elif correct_following_dot == DotHandlingPolicy.DOT_REPLACE:
+            processed = processed.removesuffix('.') + '．'
 
     if not processed:
         raise EmptyStringError(f'After processing, the string is empty. (input name: {name})')
