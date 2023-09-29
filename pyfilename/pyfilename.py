@@ -12,6 +12,7 @@ import logging
 from pathlib import Path
 from typing import overload, Final
 from enum import Enum
+import os
 
 __all__ = (
     "TRANSLATE_TABLE_FULLWIDTH", "TRANSLATE_TABLE_REPLACEMENT", "NOT_ALLOWED_NAMES",
@@ -19,8 +20,8 @@ __all__ = (
     # "MODE_FULLWIDTH", "MODE_USE_REPLACEMENT_CHAR", "MODE_REMOVE",
     # "CHAR_SPACE", "CHAR_DOUBLE_QUOTATION_MARK", "CHAR_WHITE_QUESTION_MARK", "CHAR_RED_QUESTION_MARK",
     "DotHandlingPolicy", "TextMode", "ReplacementCharacter",
-    "EmptyStringError",
-    "is_vaild_file_name", "safe_name_to_original_name", "translate_to_safe_path_name", "translate_to_safe_name",
+    # "EmptyStringError",
+    "is_safe_name", "to_original_name", "to_safe_path", "to_safe_name",
 )
 
 TRANSLATE_TABLE_FULLWIDTH = {i: 0 for i in range(32)} | str.maketrans('\\/:*?"<>|', '⧵／：＊？＂＜＞∣')
@@ -56,11 +57,11 @@ class ReplacementCharacter(Enum):
     red_question_mark: Final = '❓'
 
 
-class EmptyStringError(Exception):
-    pass
+# class EmptyStringError(Exception):
+#     pass
 
 
-def is_name_not_reserved(
+def is_name_reserved(
     name: str,
     strict_check: bool = True,
 ) -> bool:
@@ -68,7 +69,7 @@ def is_name_not_reserved(
 
     주의1: 이 함수는 해당 이름에 잘못된 글자가 쓰였는지와 같은 일반적인 부분은 확인하지 않습니다. 그러한 부분을 확인하려면
         translate_to_safe_name을 사용해야 합니다.
-    주의2: 이 함수는 이름이 예약어가 **아닌지** 확인합니다. 즉, 예약어가 아니라면 True이고, 예약어가 맞다면 False입니다.
+    주의2: 이 함수는 이름이 예약어가 인지 확인합니다. **True를 반환할 때** 사용할 수 없는 값입니다.
 
     윈도우 10/11의 예약어 제한은 다음과 같습니다.
     1. 윈도우 예약어와 일치하는가(대소문자 구분 없음)?
@@ -87,7 +88,7 @@ def is_name_not_reserved(
             윈도우의 최근 버전에서는 예약어 관련 제한이 조금 완화된 것으로 보입니다.
             예약어 제한이 조금 풀어진 예약어 체크를 하고 싶다면 False로,
             Windows 10을 포함해서 모든 윈도우 버전에 대해서 예약어 충돌이 없도록 하려면 True로 설정하세요.
-            윈도우 간에 파일을 옮기거나 Windows 10기반 컴퓨터를 쓰는 경우의 충돌을 방지하기 위해
+            윈도우 간에 파일을 옮기거나 Windows 10기반 컴퓨터를 쓰는 경우 생길 수 있는 충돌을 방지하기 위해
             항상 True로 두는 것을 권장하고, pyfilename의 모든 함수는 strict_check가 True인 상태를 사용합니다.
     """
     # sourcery skip: assign-if-exp
@@ -95,21 +96,21 @@ def is_name_not_reserved(
     name_upper = name.upper()
 
     if name_upper in reserved_names:
-        return False
-
-    if not strict_check:
         return True
 
+    if not strict_check:
+        return False
+
     if name_upper[:3] in reserved_names:
-        return name_upper[3] != '.'
+        return name_upper[3] == '.'
 
     if name_upper[:4] in reserved_names:
-        return name_upper[4] != '.'
+        return name_upper[4] == '.'
 
-    return True
+    return False
 
 
-def is_vaild_file_name(
+def is_safe_name(
     name: str,
     only_check_it_can_be_created: bool = False,
 ) -> bool:
@@ -162,7 +163,7 @@ def is_vaild_file_name(
     str_table = list(map(chr, TRANSLATE_TABLE_REPLACEMENT))
     return (
         all(char not in str_table for char in name)
-        and is_name_not_reserved(name)
+        and not is_name_reserved(name)
         or only_check_it_can_be_created
         and not name.endswith('.')
         and not name.startswith(' ')
@@ -171,7 +172,7 @@ def is_vaild_file_name(
     # ...or return translate_to_safe_name(name) == name  # 훨씬 느림
 
 
-def safe_name_to_original_name(
+def to_original_name(
     name: str,
     remove_replacement_char: str | None = None,
     html_escape: bool = False,
@@ -204,7 +205,7 @@ def safe_name_to_original_name(
     return processed
 
 
-def translate_to_safe_path_name(
+def to_safe_path(
     path: str | Path,
     mode: TextMode = TextMode.fullwidth,
     *,
@@ -232,21 +233,23 @@ def translate_to_safe_path_name(
     """
     is_path = not isinstance(path, str)
 
-    translated = [translate_to_safe_name(
+    normalized_path_parts = os.path.normpath(path).split(os.path.sep)
+
+    translated = [to_safe_name(
         path_part, mode=mode, html_unescape=html_unescape, correct_following_dot=correct_following_dot,
         replacement_char=replacement_char, consecutive_char=consecutive_char
-    ) for path_part in Path(path).parts]
+    ) for path_part in normalized_path_parts]
 
-    translated_path = Path('/'.join(translated))
+    translated_path = os.path.sep.join(translated)
 
-    if length_check and len(str(translated_path.absolute())) >= 246:
+    if length_check and len(os.path.abspath(translated_path)) >= 246:
         logging.warning('Your path is too long, so it might cannot be not saved or modified '
                         'in case of you are using default settings in Windows.')
 
-    return translated_path if is_path else str(translated_path)
+    return Path(translated_path) if is_path else translated_path
 
 
-def translate_to_safe_name(
+def to_safe_name(
     name: str,
     mode: TextMode = TextMode.fullwidth,
     *,
@@ -329,6 +332,87 @@ def translate_to_safe_name(
         processed = processed.replace(' ', consecutive_char)
 
     if not processed:
-        raise EmptyStringError(f'After processing, the string is empty. (input name: {name})')
+        # raise EmptyStringError(f'After processing, the string is empty. (input name: {name})')
+        return '_'
 
     return processed
+
+# # sanitizers of yt-dlp
+
+# def sanitize_filename(s, restricted=False, is_id=NO_DEFAULT):
+#     """Sanitizes a string so it could be used as part of a filename.
+#     @param restricted   Use a stricter subset of allowed characters
+#     @param is_id        Whether this is an ID that should be kept unchanged if possible.
+#                         If unset, yt-dlp's new sanitization rules are in effect
+#     """
+#     import re
+#     if s == '':
+#         return ''
+
+#     def replace_insane(char):
+#         if restricted and char in ACCENT_CHARS:
+#             return ACCENT_CHARS[char]
+#         elif not restricted and char == '\n':
+#             return '\0 '
+#         elif is_id is NO_DEFAULT and not restricted and char in '"*:<>?|/\\':
+#             # Replace with their full-width unicode counterparts
+#             return {'/': '', '\\': '\u29f9'}.get(char, chr(ord(char) + 0xfee0))
+#         elif char == '?' or ord(char) < 32 or ord(char) == 127:
+#             return ''
+#         elif char == '"':
+#             return '' if restricted else '\''
+#         elif char == ':':
+#             return '\0_\0-' if restricted else '\0 \0-'
+#         elif char in '\\/|*<>':
+#             return '\0_'
+#         if restricted and (char in '!&\'()[]{}$;`^,#' or char.isspace() or ord(char) > 127):
+#             return '\0_'
+#         return char
+
+#     # Replace look-alike Unicode glyphs
+#     if restricted and (is_id is NO_DEFAULT or not is_id):
+#         s = unicodedata.normalize('NFKC', s)
+#     s = re.sub(r'[0-9]+(?::[0-9]+)+', lambda m: m.group(0).replace(':', '_'), s)  # Handle timestamps
+#     result = ''.join(map(replace_insane, s))
+#     if is_id is NO_DEFAULT:
+#         result = re.sub(r'(\0.)(?:(?=\1)..)+', r'\1', result)  # Remove repeated substitute chars
+#         STRIP_RE = r'(?:\0.|[ _-])*'
+#         result = re.sub(f'^\0.{STRIP_RE}|{STRIP_RE}\0.$', '', result)  # Remove substitute chars from start/end
+#     result = result.replace('\0', '') or '_'
+
+#     if not is_id:
+#         while '__' in result:
+#             result = result.replace('__', '_')
+#         result = result.strip('_')
+#         # Common case of "Foreign band name - English song title"
+#         if restricted and result.startswith('-_'):
+#             result = result[2:]
+#         if result.startswith('-'):
+#             result = '_' + result[len('-'):]
+#         result = result.lstrip('.')
+#         if not result:
+#             result = '_'
+#     return result
+
+
+# def sanitize_path(s, force=False):
+#     """Sanitizes and normalizes path on Windows"""
+#     if sys.platform == 'win32':
+#         force = False
+#         drive_or_unc, _ = os.path.splitdrive(s)
+#     elif force:
+#         drive_or_unc = ''
+#     else:
+#         return s
+
+#     norm_path = os.path.normpath(remove_start(s, drive_or_unc)).split(os.path.sep)
+#     if drive_or_unc:
+#         norm_path.pop(0)
+#     sanitized_path = [
+#         path_part if path_part in ['.', '..'] else re.sub(r'(?:[/<>:"\|\\?\*]|[\s.]$)', '#', path_part)
+#         for path_part in norm_path]
+#     if drive_or_unc:
+#         sanitized_path.insert(0, drive_or_unc + os.path.sep)
+#     elif force and s and s[0] == os.path.sep:
+#         sanitized_path.insert(0, os.path.sep)
+#     return os.path.join(*sanitized_path)

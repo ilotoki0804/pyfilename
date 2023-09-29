@@ -5,8 +5,8 @@ if __name__ == "__main__":
         # MODE_FULLWIDTH, MODE_USE_REPLACEMENT_CHAR, MODE_REMOVE,
         # CHAR_SPACE, CHAR_DOUBLE_QUOTATION_MARK, CHAR_WHITE_QUESTION_MARK, CHAR_RED_QUESTION_MARK,
         DotHandlingPolicy, TextMode, ReplacementCharacter,
-        EmptyStringError,
-        is_vaild_file_name, safe_name_to_original_name, translate_to_safe_path_name, translate_to_safe_name,
+        # EmptyStringError,
+        is_safe_name, to_original_name, to_safe_path, to_safe_name,
     )
 else:
     from .pyfilename import (
@@ -15,8 +15,8 @@ else:
         # MODE_FULLWIDTH, MODE_USE_REPLACEMENT_CHAR, MODE_REMOVE,
         # CHAR_SPACE, CHAR_DOUBLE_QUOTATION_MARK, CHAR_WHITE_QUESTION_MARK, CHAR_RED_QUESTION_MARK,
         DotHandlingPolicy, TextMode, ReplacementCharacter,
-        EmptyStringError,
-        is_vaild_file_name, safe_name_to_original_name, translate_to_safe_path_name, translate_to_safe_name,
+        # EmptyStringError,
+        is_safe_name, to_original_name, to_safe_path, to_safe_name,
     )
 
-__version__ = "0.2.0"
+__version__ = "0.4.0"
