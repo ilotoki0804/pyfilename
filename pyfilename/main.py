@@ -6,13 +6,15 @@
 # 하지만 몇몇 기기들은 자체적으로 그 외의 이름에도 제한을 걸기도 합니다(삼성 갤럭시 등).
 
 # import re
+import functools
 import html
 # from typing import Literal
 import logging
 from pathlib import Path
-from typing import overload, Final
+# from typing import Final
 from enum import Enum
 import os
+from typing import Callable
 
 __all__ = (
     "TRANSLATE_TABLE_FULLWIDTH", "TRANSLATE_TABLE_REPLACEMENT", "NOT_ALLOWED_NAMES",
@@ -21,7 +23,7 @@ __all__ = (
     # "CHAR_SPACE", "CHAR_DOUBLE_QUOTATION_MARK", "CHAR_WHITE_QUESTION_MARK", "CHAR_RED_QUESTION_MARK",
     "DotHandlingPolicy", "TextMode", "ReplacementCharacter",
     # "EmptyStringError",
-    "is_safe_name", "to_original_name", "to_safe_path", "to_safe_name",
+    "is_name_safe", "get_original_name", "sanitize_path", "sanitize",
 )
 
 TRANSLATE_TABLE_FULLWIDTH = {i: 0 for i in range(32)} | str.maketrans('\\/:*?"<>|', '⧵／：＊？＂＜＞∣')
@@ -51,10 +53,10 @@ class TextMode(Enum):
 
 
 class ReplacementCharacter(Enum):
-    space: Final = ' '
-    double_question_mark: Final = '⁇'
-    white_question_mark: Final = '❔'
-    red_question_mark: Final = '❓'
+    space = ' '
+    double_question_mark = '⁇'
+    white_question_mark = '❔'
+    red_question_mark = '❓'
 
 
 # class EmptyStringError(Exception):
@@ -63,7 +65,7 @@ class ReplacementCharacter(Enum):
 
 def is_name_reserved(
     name: str,
-    strict_check: bool = True,
+    strict: bool = True,
 ) -> bool:
     """이 함수는 이름이 예약어에 해당하는지 확인합니다.
 
@@ -92,13 +94,13 @@ def is_name_reserved(
             항상 True로 두는 것을 권장하고, pyfilename의 모든 함수는 strict_check가 True인 상태를 사용합니다.
     """
     # sourcery skip: assign-if-exp
-    reserved_names = NOT_ALLOWED_NAMES if strict_check else NOT_ALLOWED_NAMES_WIN11
+    reserved_names = NOT_ALLOWED_NAMES if strict else NOT_ALLOWED_NAMES_WIN11
     name_upper = name.upper()
 
     if name_upper in reserved_names:
         return True
 
-    if not strict_check:
+    if not strict:
         return False
 
     if name_upper[:3] in reserved_names:
@@ -110,9 +112,11 @@ def is_name_reserved(
     return False
 
 
-def is_safe_name(
+def is_name_safe(
     name: str,
-    only_check_it_can_be_created: bool = False,
+    is_path: bool = False,
+    creatable_check_only: bool = False,
+    strict: bool = True,
 ) -> bool:
     r"""
     해당 이름이 파일 이름으로 사용하기에 적절한지 확인합니다.
@@ -161,19 +165,28 @@ def is_safe_name(
     print(filename in os.listdir('.'))  # 출력결과: True
     ```
     """
-    str_table = list(map(chr, TRANSLATE_TABLE_REPLACEMENT))
-    return (
-        all(char not in str_table for char in name)
-        and not is_name_reserved(name)
-        or only_check_it_can_be_created
-        and not name.endswith('.')
-        and not name.startswith(' ')
-        and not name.endswith(' ')
-    )
+    str_table = {chr(chr_int) for chr_int in TRANSLATE_TABLE_REPLACEMENT}
+    if is_path:
+        str_table -= {'\\', '/'}
+
+    if is_name_reserved(name, strict) or any(char in str_table for char in name):
+        return False
+
+    if creatable_check_only:
+        return True
+
+    if name.endswith('.') or name.endswith(' '):
+        return False
+
+    if not strict:  # sourcery skip
+        return True
+
+    return not name.startswith(' ')
+
     # ...or return translate_to_safe_name(name) == name  # 훨씬 느림
 
 
-def to_original_name(
+def get_original_name(
     name: str,
     remove_replacement_char: str | None = None,
     html_escape: bool = False,
@@ -206,11 +219,11 @@ def to_original_name(
     return processed
 
 
-def to_safe_path(
+def sanitize_path(
     path: str | Path,
     mode: TextMode = TextMode.fullwidth,
     *,
-    length_check: bool = False,
+    # length_check: bool = False,
     html_unescape: bool = True,
     replacement_char: str | ReplacementCharacter = ReplacementCharacter.space,
     correct_following_dot: DotHandlingPolicy = DotHandlingPolicy.replace,
@@ -234,32 +247,38 @@ def to_safe_path(
     """
     is_path = not isinstance(path, str)
 
-    normalized_path_parts = os.path.normpath(path).split(os.path.sep)
+    # normalized_path_parts = os.path.normpath(path).split(os.path.sep)
+    # 윈도우 사용자도 '/'을 구분자로 사용하는 경우가 더러 있기 때문에 위의 코드 대신 둘 모두를 구분자로 사용함.
+    normalized_path_parts = [fully_splited
+                             for backslash_splited in os.path.normpath(path).split('\\')
+                             for fully_splited in backslash_splited.split('/')]
 
-    translated = [to_safe_name(
+    translated = [path_part if path_part in {'.', '..'} else sanitize(
         path_part, mode=mode, html_unescape=html_unescape, correct_following_dot=correct_following_dot,
         replacement_char=replacement_char, consecutive_char=consecutive_char
     ) for path_part in normalized_path_parts]
 
     translated_path = os.path.sep.join(translated)
 
-    if length_check and len(os.path.abspath(translated_path)) >= 246:
+    # if length_check and len(os.path.abspath(translated_path)) >= 246:
+    if len(os.path.abspath(translated_path)) >= 246:
         logging.warning('Your path is too long, so it might cannot be not saved or modified '
                         'in case of you are using default settings in Windows.')
 
     return Path(translated_path) if is_path else translated_path
 
 
-def to_safe_name(
+def sanitize(
     name: str,
     mode: TextMode = TextMode.fullwidth,
+    strict: bool = True,
     *,
     html_unescape: bool = True,
     replacement_char: str | ReplacementCharacter = ReplacementCharacter.space,
     correct_following_dot: DotHandlingPolicy = DotHandlingPolicy.replace,
     consecutive_char: str | None = None,
 ) -> str:
-    """파일명 혹은 디렉토리명에 사용할 수 없는 글자를 사용할 수 있는 글자로 변경합니다.
+    r"""파일명 혹은 디렉토리명에 사용할 수 없는 글자를 사용할 수 있는 글자로 변경합니다.
 
     이 함수는 이름을 normalize하는 것에 주안점을 두고 있지 않습니다. 대신 윈도우에서 이름 충돌이 일어나지 않도록 만듭니다.
 
@@ -273,7 +292,7 @@ def to_safe_name(
 
         mode: 문자열 변환 모드를 설정합니다.
 
-        html_unescape: HTML escape되었던 문자열을 unescape합니다. 예를 들어 '&lt;&amp;&gt;'라는 문자열이 있다면 '<&>'로 다시 되돌립니다.
+        html_unescape: HTML escape되었던 문자열을 unescape합니다. 예를 들어 '\&lt;\&amp;\&gt;'라는 문자열이 있다면 '<&>'로 다시 되돌립니다.
 
         correct_following_dot:
             윈도우에서는 파일 이름 맨 끝에 점이 오는 것을 금지합니다. 그렇게 맨 뒤 글자의 마침표는 제거하거나, 안전한 문자로 변경해야 합니다.
@@ -311,11 +330,13 @@ def to_safe_name(
 
     # 윈도우에서는 앞뒤에 space가 있을 수 없기에 strip이 필요하다.
     if isinstance(replacement_char, str):
-        processed = processed.replace('\x00', replacement_char).strip()
+        processed = processed.replace('\x00', replacement_char)
     elif isinstance(replacement_char, ReplacementCharacter):
-        processed = processed.replace('\x00', replacement_char.value).strip()
+        processed = processed.replace('\x00', replacement_char.value)
     else:
         raise TypeError(f'Unexpected type of replacement_char: {type(replacement_char)}')
+
+    processed = processed.strip() if strict else processed.rstrip()
 
     if correct_following_dot and processed.endswith('.'):
         if correct_following_dot == DotHandlingPolicy.remove:
@@ -323,7 +344,7 @@ def to_safe_name(
         elif correct_following_dot == DotHandlingPolicy.replace:
             processed = processed.removesuffix('.') + '．'
 
-    if processed.upper() in NOT_ALLOWED_NAMES:
+    if is_name_reserved(processed, strict):
         # 만약 processed + '_'이라면 파일 확장자가 망가질 수 있다.
         # 예를 들어 "COM2.txt"라면 "COM2.txt_"가 되어 파일 확장자가 망가진다.
         # 하지만 앞쪽에 놓는다면 "_COM2.txt"가 되어 파일 확장자가 망가지지 않는다.
@@ -332,11 +353,35 @@ def to_safe_name(
     if consecutive_char is not None:
         processed = processed.replace(' ', consecutive_char)
 
-    if not processed:
-        # raise EmptyStringError(f'After processing, the string is empty. (input name: {name})')
+    if not processed:  # sourcery skip
         return '_'
 
     return processed
+
+
+def sanitize_return_value(
+    f: Callable | None = None,
+    /,
+    *,
+    allow_path: bool = False,
+    **sanitize_kwargs,
+):
+    """함수의 출력값이 문자열일 경우 해당 출력값을 파일명 및 디렉토리명에 사용할 수 있도록 변경하는 데코레이터입니다.
+
+    allow_path가 True라면 sanitize_path를 사용합니다.
+    """
+    if f is None:
+        return functools.partial(sanitize_return_value, **sanitize_kwargs)
+
+    def wrapper(*args, **kwargs):
+        return_value = f(*args, **kwargs)
+
+        if not isinstance(return_value, str):
+            return return_value
+
+        return sanitize_path(return_value) if allow_path else sanitize(return_value)
+
+    return wrapper
 
 # # sanitizers of yt-dlp
 
