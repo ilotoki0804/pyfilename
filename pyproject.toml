@@ -1,0 +1,34 @@
+[tool.poetry]
+name = "pyfilename"
+version = "0.4.0"
+description = "Windows-proof file name generator."
+authors = ["ilotoki0804 <ilotoki0804@gmail.com>"]
+license = "MIT"
+readme = "README.md"
+keywords = ["files", "file", "windows"]
+classifiers = [
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+]
+
+[tool.poetry.urls]
+Repository = "https://github.com/ilotoki0804/pyfilename"
+Issues = "https://github.com/ilotoki0804/pyfilename/issues"
+Changelog = "https://github.com/ilotoki0804/pyfilename#relese-note"
+
+[tool.poetry.dependencies]
+python = "^3.8"
+
+[tool.poetry.scripts]
+pyfilename = "WebtoonScraper:__main__.main"
+
+[tool.poetry.group.dev.dependencies]
+ruff = "^0.3.7"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
