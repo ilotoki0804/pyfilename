@@ -1,7 +1,7 @@
 [tool.poetry]
 name = "pyfilename"
-version = "0.4.0"
-description = "Windows-proof file name generator."
+version = "0.5.0"
+description = "Make names comply various filename constraints of Windows."
 authors = ["ilotoki0804 <ilotoki0804@gmail.com>"]
 license = "MIT"
 readme = "README.md"

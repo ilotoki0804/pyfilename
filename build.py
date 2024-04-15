@@ -1,7 +1,7 @@
 """
 Replace relative path links with GitHub links and add warning in front of the long description.
 
-Last modified at 2023-04-12; 8th edition.
+Last modified at 2023-04-12; 9th edition.
 """
 
 import os
@@ -11,11 +11,8 @@ from pathlib import Path
 
 import tomlkit
 
-from pyfilename import (
-    __github_project_name__,
-    __github_user_name__,
-    __version__,
-)
+from pyfilename import __url__ as url
+from pyfilename import __version__ as version
 
 LEAVE_README_BUILD_VERSION = False
 PUBLISH = True
@@ -23,17 +20,26 @@ PUBLISH = True
 # LEAVE_README_BUILD_VERSION = True
 # PUBLISH = False
 
-github_project_url = (
-    f"https://github.com/{__github_user_name__}/{__github_project_name__}"
-)
+
+def match_url(url: str) -> tuple[str, str]:
+    result = re.match(
+        r"(https?:\/\/)?github[.]com\/(?P<user>\w+)\/(?P<project>\w+)", url
+    )
+    if result is None:
+        raise ValueError("URL is invalid or not a github URL.")
+    return result["user"], result["project"]
+
+
+username, project_name = match_url(url)
+github_project_url = f"https://github.com/{username}/{project_name}"
 
 
 def make_relative_link_work(match: re.Match) -> str:
     if match.group("directory_type") == "images":
         return (
             f'[{match.group("description")}]'
-            f'(https://raw.githubusercontent.com/{__github_user_name__}'
-            f'/{__github_project_name__}/master/'
+            f'(https://raw.githubusercontent.com/{username}'
+            f'/{project_name}/master/'
             f'{match.group("path")})'
         )
 
@@ -52,7 +58,7 @@ def main():
     # update pyproject.toml version
     pyproject_path = Path("pyproject.toml")
     pyproject_data = tomlkit.parse(pyproject_path.read_text())
-    pyproject_data["tool"]["poetry"]["version"] = __version__  # type: ignore
+    pyproject_data["tool"]["poetry"]["version"] = version  # type: ignore
     pyproject_path.write_text(tomlkit.dumps(pyproject_data), encoding="utf-8")
 
     long_description = f"**Check lastest version [here]({github_project_url}).**\n"

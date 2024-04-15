@@ -1,5 +1,4 @@
-"""Windows-proof file name generator.
-
+"""Make names comply various filename constraints of Windows.
 ██████╗░██╗░░░██╗███████╗██╗██╗░░░░░███████╗███╗░░██╗░█████╗░███╗░░░███╗███████╗
 ██╔══██╗╚██╗░██╔╝██╔════╝██║██║░░░░░██╔════╝████╗░██║██╔══██╗████╗░████║██╔════╝
 ██████╔╝░╚████╔╝░█████╗░░██║██║░░░░░█████╗░░██╔██╗██║███████║██╔████╔██║█████╗░░
@@ -8,9 +7,8 @@
 ╚═╝░░░░░░░░╚═╝░░░╚═╝░░░░░╚═╝╚══════╝╚══════╝╚═╝░░╚══╝╚═╝░░╚═╝╚═╝░░░░░╚═╝╚══════╝
 """
 
-__version__ = "0.4.0"
-__github_project_name__ = "pyfilename"
-__github_user_name__ = "ilotoki0804"
+__version__ = "0.5.0"
+__url__ = "https://github.com/ilotoki0804/pyfilename"
 
 from .main import (
     NOT_ALLOWED_CHARS,
