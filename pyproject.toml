@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "pyfilename"
-version = "0.5.0"
+version = "0.5.1"
 description = "Make names comply various filename constraints of Windows."
 authors = ["ilotoki0804 <ilotoki0804@gmail.com>"]
 license = "MIT"
@@ -9,7 +9,6 @@ keywords = ["files", "file", "windows"]
 classifiers = [
     "License :: OSI Approved :: MIT License",
     "Operating System :: OS Independent",
-    "Programming Language :: Python :: 3.8",
     "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
@@ -21,7 +20,7 @@ Issues = "https://github.com/ilotoki0804/pyfilename/issues"
 Changelog = "https://github.com/ilotoki0804/pyfilename#relese-note"
 
 [tool.poetry.dependencies]
-python = "^3.8"
+python = "^3.9"
 
 [tool.poetry.scripts]
 pyfilename = "WebtoonScraper:__main__.main"
