@@ -1,34 +1,30 @@
 import pytest
+
 from pyfilename import (
-    NOT_ALLOWED_CHARS,
-    NOT_ALLOWED_NAMES,
-    NOT_ALLOWED_NAMES_WIN11,
-    REVERSE_FULLWIDTH_TABLE,
-    TRANSLATION_TABLE_FULLWIDTH,
+    convert,
     is_creatable,
-    is_name_reserved,
-    is_name_safe,
-    sanitize,
-    unsanitize,
+    is_reserved,
+    is_safe,
+    revert,
 )
 
 
 def test_is_name_reserved():
-    assert is_name_reserved("NUL")
-    assert is_name_reserved("NUL.txt")
-    assert is_name_reserved("NUL.hello.world")
-    assert is_name_reserved("nUl.txt")
-    assert is_name_reserved("COM¹")
-    assert is_name_reserved("COM¹.txt")
-    assert is_name_reserved("COM¹.hello.world")
-    assert is_name_reserved("CoM1.txt")
-    assert is_name_reserved("CoM0.txt")
-    assert is_name_reserved("COM0.")
-    assert not is_name_reserved("hello")
-    assert not is_name_reserved("NUL.txt", strict=False)
-    assert not is_name_reserved("COM¹.hello.world", strict=False)
-    assert not is_name_reserved("COM¹.hello.world", strict=False)
-    assert not is_name_reserved("COM0", strict=False)
+    assert is_reserved("NUL")
+    assert is_reserved("NUL.txt")
+    assert is_reserved("NUL.hello.world")
+    assert is_reserved("nUl.txt")
+    assert is_reserved("COM¹")
+    assert is_reserved("COM¹.txt")
+    assert is_reserved("COM¹.hello.world")
+    assert is_reserved("CoM1.txt")
+    assert is_reserved("CoM0.txt")
+    assert is_reserved("COM0.")
+    assert not is_reserved("hello")
+    assert not is_reserved("NUL.txt", strict=False)
+    assert not is_reserved("COM¹.hello.world", strict=False)
+    assert not is_reserved("COM¹.hello.world", strict=False)
+    assert not is_reserved("COM0", strict=False)
 
 
 def test_is_creatable():
@@ -46,40 +42,40 @@ def test_is_creatable():
 
 
 def test_is_name_safe():
-    assert is_name_safe("hello.txt")
-    assert is_name_safe("   hello.txt", strict=False)
-    assert not is_name_safe("")
-    assert not is_name_safe("hello.txt ")
-    assert not is_name_safe("hello.txt.")
-    assert not is_name_safe("hello.txt.  . ...  ")
-    assert not is_name_safe("   hello.txt")
+    assert is_safe("hello.txt")
+    assert is_safe("   hello.txt", strict=False)
+    assert not is_safe("")
+    assert not is_safe("hello.txt ")
+    assert not is_safe("hello.txt.")
+    assert not is_safe("hello.txt.  . ...  ")
+    assert not is_safe("   hello.txt")
 
 
 def test_unsanitize():
-    assert unsanitize("⧵／：＊？＂＜＞∣．txt") == '\\/:*?"<>|.txt'
+    assert revert("⧵／：＊？＂＜＞∣．txt") == '\\/:*?"<>|.txt'
 
 
 def test_sanitize():
-    assert sanitize("hello.txt") == "hello.txt"
-    assert sanitize("hello?.txt.") == "hello？.txt．"
-    assert sanitize("          hello?.txt.") == "hello？.txt．"
-    assert sanitize("   ... . . .   . .   . ", when_empty=None) == "... . . .   . .   ．"
-    assert sanitize("   ... . . .   . .   . ", following_dot="remove", when_empty=None) is None
-    assert sanitize("   ????hello.????txt", mode="char", when_empty=None) == "hello.    txt"
-    assert sanitize("   ????hello.????txt...........", mode="char", replacement_char=";") == ";;;;hello.;;;;txt..........;"
-    assert sanitize("   ????hello.????txt...........", mode="fullwidth", following_dot="char", replacement_char=";") == "？？？？hello.？？？？txt..........;"
-    assert sanitize("   ????hello.????txt", mode="remove", when_empty=None) == "hello.txt"
-    assert sanitize("   ????hello.????txt....", mode="remove", following_dot="no_correct", when_empty=None) == "hello.txt...."
-    assert sanitize("NUL.   ????hello.????txt....", mode="remove", following_dot="no_correct", when_reserved=lambda name: f"The name is reserved. Sorry! Original name: {name}") == "The name is reserved. Sorry! Original name: NUL.   hello.txt...."
+    assert convert("hello.txt") == "hello.txt"
+    assert convert("hello?.txt.") == "hello？.txt．"
+    assert convert("          hello?.txt.") == "hello？.txt．"
+    assert convert("   ... . . .   . .   . ", when_empty=None) == "... . . .   . .   ．"
+    assert convert("   ... . . .   . .   . ", following_dot="remove", when_empty=None) is None
+    assert convert("   ????hello.????txt", mode="char", when_empty=None) == "hello.    txt"
+    assert convert("   ????hello.????txt...........", mode="char", replacement_char=";") == ";;;;hello.;;;;txt..........;"
+    assert convert("   ????hello.????txt...........", mode="fullwidth", following_dot="char", replacement_char=";") == "？？？？hello.？？？？txt..........;"
+    assert convert("   ????hello.????txt", mode="remove", when_empty=None) == "hello.txt"
+    assert convert("   ????hello.????txt....", mode="remove", following_dot="no_correct", when_empty=None) == "hello.txt...."
+    assert convert("NUL.   ????hello.????txt....", mode="remove", following_dot="no_correct", when_reserved=lambda name: f"The name is reserved. Sorry! Original name: {name}") == "The name is reserved. Sorry! Original name: NUL.   hello.txt...."
 
     with pytest.raises(TypeError):
-        sanitize("hello?.txt.", mode="any")  # type: ignore
+        convert("hello?.txt.", mode="any")  # type: ignore
     with pytest.raises(TypeError):
-        sanitize("hello?.txt.", following_dot="any")  # type: ignore
+        convert("hello?.txt.", following_dot="any")  # type: ignore
 
-    assert sanitize("NUL", when_empty=123, when_reserved=lambda name: 345) == 345
-    assert sanitize("   ... . . .   . .   . ", mode="remove", when_empty=None) is None
-    assert sanitize("", when_empty="empty") == "empty"
-    assert sanitize("", when_empty="empty") == "empty"
-    assert sanitize("", when_empty=None) is None
-    assert sanitize("", when_empty=123) == 123
+    assert convert("NUL", when_empty=123, when_reserved=lambda name: 345) == 345
+    assert convert("   ... . . .   . .   . ", mode="remove", when_empty=None) is None
+    assert convert("", when_empty="empty") == "empty"
+    assert convert("", when_empty="empty") == "empty"
+    assert convert("", when_empty=None) is None
+    assert convert("", when_empty=123) == 123

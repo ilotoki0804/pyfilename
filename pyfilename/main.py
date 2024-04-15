@@ -48,7 +48,7 @@ NOT_ALLOWED_NAMES_WIN11 = {
 NOT_ALLOWED_NAMES = NOT_ALLOWED_NAMES_WIN11 | {"COM0", "LPT0"}
 
 
-def is_name_reserved(name: str, strict: bool = True) -> bool:
+def is_reserved(name: str, strict: bool = True) -> bool:
     """이 함수는 이름이 예약어에 해당하는지 확인합니다.
 
     윈도우에서는 금지 문자가 포함되어 있지 않더라도
@@ -101,7 +101,7 @@ def is_creatable(name: str, strict: bool = True) -> bool:
 
     이 함수를 이용하는 경우 오류는 일어나지 않지만 자신이 설정한 파일명과는
     다른 이름을 가진 파일이 생성될 수 있다는 점을 주의하세요.
-    만약 자신이 설정한 파일명과 같은 이름의 파일이 생성될지 여부가 궁금하다면 `is_name_safe`를 이용해 주세요.
+    만약 자신이 설정한 파일명과 같은 이름의 파일이 생성될지 여부가 궁금하다면 `is_safe`를 이용해 주세요.
 
     윈도우에서 생성되지 않는 파일명의 종류는 다음과 같습니다.
 
@@ -114,7 +114,7 @@ def is_creatable(name: str, strict: bool = True) -> bool:
         strict: 윈도우 10의 조금 더 강력한 예약어셋을 사용합니다.
             윈도우 10을 사용하는 다른 컴퓨터들과의 호환성을 위해 항상 True로 두는 것을 추천합니다.
     """
-    if is_name_reserved(name, strict):
+    if is_reserved(name, strict):
         return False
 
     name_chars = set(name)
@@ -125,7 +125,7 @@ def is_creatable(name: str, strict: bool = True) -> bool:
     return not name_chars & NOT_ALLOWED_CHARS
 
 
-def is_name_safe(name: str, strict: bool = True) -> bool:
+def is_safe(name: str, strict: bool = True) -> bool:
     """주어진 이름이 파일 이름으로 사용하기에 적절한지 확인합니다.
 
     이때 파일명은 변경되지 않고 그대로 생성됩니다.
@@ -158,8 +158,8 @@ def is_name_safe(name: str, strict: bool = True) -> bool:
     return not name.startswith(" ")
 
 
-def unsanitize(name: str) -> str:
-    """`sanitize`에서 `"fullwidth"` 모드를 통해 바뀐 안전한 파일명을 다시 원본 파일명으로 변경합니다.
+def revert(name: str) -> str:
+    """`convert`에서 `"fullwidth"` 모드를 통해 바뀐 안전한 파일명을 다시 원본 파일명으로 변경합니다.
 
     전각 문자의 경우 잘 원본으로 변환되지만 replace_char로 변경된 제어 문자의 경우는 다시 변경이 불가능합니다.
 
@@ -170,7 +170,7 @@ def unsanitize(name: str) -> str:
 
 
 @overload
-def sanitize(
+def convert(
     name: str,
     replacement_char: str = " ",
     mode: Literal["fullwidth", "char", "remove"] = "fullwidth",
@@ -183,7 +183,7 @@ def sanitize(
     ...  # pragma: no cover
 
 @overload
-def sanitize(
+def convert(
     name: str,
     replacement_char: str = " ",
     mode: Literal["fullwidth", "char", "remove"] = "fullwidth",
@@ -195,7 +195,7 @@ def sanitize(
 ) -> str | T:
     ...  # pragma: no cover
 
-def sanitize(
+def convert(
     name: str,
     replacement_char: str = " ",
     mode: Literal["fullwidth", "char", "remove"] = "fullwidth",
@@ -209,11 +209,15 @@ def sanitize(
 
     주의: 이 함수는 파일 *경로*(슬래시가 포함된 `path/to/file.txt` 같은 문자열)를 처리하도록 제작되지 않았습니다.
 
+    주의: 부분적인 파일명보다는 전체 파일명을 함수에 입력하는 것을 강력히 권장합니다.
+    부분적인 파일명을 입력했을 때는 필요 없는 제한 우회가 들어가거나 전체 합쳐졌을 때 문제가 있는 파일명이 생길 수 있기 때문입니다.
+    예를 들어 `"file: " + pf.convert(unsafe) + ".txt"`보다는 `pf.convert("file: " + unsafe + ".txt")`가 훨씬 낫습니다.
+
     Args:
         name: 변환할 파일 혹은 디렉토리의 이름입니다.
         mode: 사용할 수 없는 문자를 맏닥뜨렸을 때 해당 문자를 처리할 방식을 결정합니다.
             아래 모드들은 제어 문자와 일부 특수문자들을 어떻게 처리할지를 결정합니다.
-            "fullwidth" (기본값): 가능한 문자를 전각 문자로 변경하고 대응하는 전각 문자가 없는 경우 `replace_char`로 교체합니다.
+            "fullwidth" (기본값): 가능한 문자를 전각 문자로 변경하고 대응하는 전각 문자가 없는 경우 `replacement_char`로 교체합니다.
                 사용할 수 있는 문자는 제어 문자와 일부 특수문자가 있습니다.
                 제어 문자는 특수한 목적을 위해 남아있는 문자이고, 일부 특수문자는 시스템에서 사용하기 위한 요량으로
                 사용자가 해당 문자를 사용하는 것을 금지한 문자들입니다.
@@ -240,10 +244,11 @@ def sanitize(
                 그러한 경우 "no_correct"를 사용하면 추가적인 문자열 변형 없이 정상적으로 파일명을 결정할 수 있습니다.
         when_reserved: 문자열을 처리한 결과 예약어라면 어떻게 처리할지 결정합니다.
             예약어에 대해서는 `is_reserved`의 문서를 확인해 보세요.
+            **주의**: 이 함수로 처리된 결과가 안전한 이름인지 꼭 확인해 보세요. `when_reserved` 함수의 결과는 별도로 모니터되지 않습니다.
         when_empty: 문자열을 처리한 결과가 빈 문자열일 경우 어떻게 처리할지 결정합니다.
             이 함수는 when_empty의 값이 안전한지를 별도로 검사하지 않습니다.
             when_empty에 속한 문자열이 문자열에서 사용 가능한지 반드시 확인해 보세요.
-            만약 확신하지 못한다면 when_empty의 문자열을 sanitize하고 when_empty의 값으로 설정하세요.
+            만약 확신하지 못한다면 반드시 when_empty의 문자열을 convert하세요.
     """
     # sourcery skip
 
@@ -280,7 +285,7 @@ def sanitize(
     if strict:
         name = name.lstrip(" ")
 
-    if is_name_reserved(name, strict):
+    if is_reserved(name, strict):
         return when_reserved(name)
 
     return name or when_empty
