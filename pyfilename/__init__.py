@@ -11,9 +11,6 @@ __version__ = "0.5.1"
 __url__ = "https://github.com/ilotoki0804/pyfilename"
 
 from .main import (
-    NOT_ALLOWED_CHARS,
-    NOT_ALLOWED_NAMES,
-    NOT_ALLOWED_NAMES_WIN11,
     convert,
     is_creatable,
     is_reserved,

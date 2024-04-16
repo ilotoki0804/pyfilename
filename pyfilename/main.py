@@ -7,45 +7,17 @@ T = TypeVar("T")
 TRANSLATION_TABLE_FULLWIDTH = {i: 0 for i in range(32)} | str.maketrans(
     '\\/:*?"<>|', "⧵／：＊？＂＜＞∣"
 )
-TRANSLATION_TABLE_REPLACEMENT = {i: 0 for i in range(32)} | str.maketrans(
-    '\\/:*?"<>|', "\x00" * 9
-)
-NOT_ALLOWED_CHARS = set('\\/:*?"<>|')
-REVERSE_FULLWIDTH_TABLE = str.maketrans("⧵／：＊？＂＜＞∣．", '\\/:*?"<>|.')
-# REPLACERS: tuple[str, ...] = (" ", "⁇", "❔", "❓")
+TRANSLATION_TABLE = {i: 0 for i in range(32)} | str.maketrans('\\/:*?"<>|', "\x00" * 9)
+FORBIDDEN_CHARS = set('\\/:*?"<>|')
+FULLWIDTH_TABLE_REVERT = str.maketrans("⧵／：＊？＂＜＞∣．", '\\/:*?"<>|.')
 
 # check https://learn.microsoft.com/en-us/windows/win32/fileio/naming-a-file
-NOT_ALLOWED_NAMES_WIN11 = {
-    "CON",
-    "PRN",
-    "AUX",
-    "NUL",
-    "COM1",
-    "COM¹",
-    "COM2",
-    "COM²",
-    "COM3",
-    "COM³",
-    "COM4",
-    "COM5",
-    "COM6",
-    "COM7",
-    "COM8",
-    "COM9",
-    "LPT1",
-    "LPT¹",
-    "LPT2",
-    "LPT²",
-    "LPT3",
-    "LPT³",
-    "LPT4",
-    "LPT5",
-    "LPT6",
-    "LPT7",
-    "LPT8",
-    "LPT9",
-}
-NOT_ALLOWED_NAMES = NOT_ALLOWED_NAMES_WIN11 | {"COM0", "LPT0"}
+RESERVED_WIN11 = {
+    "CON", "PRN", "AUX", "NUL",
+    "COM1", "COM¹", "COM2", "COM²", "COM3", "COM³", "COM4", "COM5", "COM6", "COM7", "COM8", "COM9",
+    "LPT1", "LPT¹", "LPT2", "LPT²", "LPT3", "LPT³", "LPT4", "LPT5", "LPT6", "LPT7", "LPT8", "LPT9",
+}  # fmt: skip
+RESERVED = RESERVED_WIN11 | {"COM0", "LPT0"}
 
 
 def is_reserved(name: str, strict: bool = True) -> bool:
@@ -71,10 +43,10 @@ def is_reserved(name: str, strict: bool = True) -> bool:
     """
     # sourcery skip
 
-    reserved_names = NOT_ALLOWED_NAMES if strict else NOT_ALLOWED_NAMES_WIN11
+    reserved_names = RESERVED if strict else RESERVED_WIN11
     # `NUL.`의 경우 마침표가 없어진 후 `NUL`이 되어 예약어임.
     # `NUL   `의 경우 스페이스가 없어진 수 `NUL`이 되어 예약어임.
-    # 이 경우에는 윈도우 10도 적용됨.
+    # 이 경우에는 윈도우 11도 적용됨.
     # 따라서 `rstrip`이 필요.
     name_upper = name.upper().rstrip(". ")
     if strict:
@@ -114,6 +86,8 @@ def is_creatable(name: str, strict: bool = True) -> bool:
         strict: 윈도우 10의 조금 더 강력한 예약어셋을 사용합니다.
             윈도우 10을 사용하는 다른 컴퓨터들과의 호환성을 위해 항상 True로 두는 것을 추천합니다.
     """
+    # sourcery skip
+
     if is_reserved(name, strict):
         return False
 
@@ -122,7 +96,7 @@ def is_creatable(name: str, strict: bool = True) -> bool:
     if name_chars <= {".", " "}:
         return False
 
-    return not name_chars & NOT_ALLOWED_CHARS
+    return not name_chars & FORBIDDEN_CHARS
 
 
 def is_safe(name: str, strict: bool = True) -> bool:
@@ -166,7 +140,7 @@ def revert(name: str) -> str:
     Args:
         name: 원본 파일명으로 되돌릴 안전한 파일명입니다.
     """
-    return name.translate(REVERSE_FULLWIDTH_TABLE)
+    return name.translate(FULLWIDTH_TABLE_REVERT)
 
 
 @overload
@@ -179,8 +153,8 @@ def convert(
     following_dot: Literal["fullwidth", "char", "remove", "no_correct"] | None = None,
     when_reserved: Callable[[str], str] = lambda name: "_" + name,
     when_empty: str = "_",
-) -> str:
-    ...  # pragma: no cover
+) -> str: ...  # pragma: no cover
+
 
 @overload
 def convert(
@@ -192,8 +166,8 @@ def convert(
     following_dot: Literal["fullwidth", "char", "remove", "no_correct"] | None = None,
     when_reserved: Callable[[str], T] = lambda name: "_" + name,
     when_empty: str | T = "_",
-) -> str | T:
-    ...  # pragma: no cover
+) -> str | T: ...  # pragma: no cover
+
 
 def convert(
     name: str,
@@ -254,9 +228,7 @@ def convert(
 
     name = (
         name.translate(
-            TRANSLATION_TABLE_FULLWIDTH
-            if mode == "fullwidth"
-            else TRANSLATION_TABLE_REPLACEMENT
+            TRANSLATION_TABLE_FULLWIDTH if mode == "fullwidth" else TRANSLATION_TABLE
         )
         .replace("\x00", "" if mode == "remove" else replacement_char)
         .rstrip()
@@ -280,7 +252,9 @@ def convert(
             if mode not in {"fullwidth", "char", "remove"}:
                 raise TypeError(f"Unknown option for `mode`: {mode!r}")
             else:
-                raise TypeError(f"Unknown option for `following_dot`: {following_dot!r}")
+                raise TypeError(
+                    f"Unknown option for `following_dot`: {following_dot!r}"
+                )
 
     if strict:
         name = name.lstrip(" ")

@@ -8,6 +8,8 @@ from pyfilename import (
     revert,
 )
 
+# fmt: off
+
 
 def test_is_name_reserved():
     assert is_reserved("NUL")
