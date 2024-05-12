@@ -13,7 +13,7 @@ FULLWIDTH_TABLE_REVERT = str.maketrans("⧵／：＊？＂＜＞∣．", '\\/:*?
 
 # check https://learn.microsoft.com/en-us/windows/win32/fileio/naming-a-file
 RESERVED_WIN11 = {
-    "CON", "PRN", "AUX", "NUL",
+    "CON", "PRN", "AUX", "NUL", "CONIN$", "CONOUT$",
     "COM1", "COM¹", "COM2", "COM²", "COM3", "COM³", "COM4", "COM5", "COM6", "COM7", "COM8", "COM9",
     "LPT1", "LPT¹", "LPT2", "LPT²", "LPT3", "LPT³", "LPT4", "LPT5", "LPT6", "LPT7", "LPT8", "LPT9",
 }  # fmt: skip
