@@ -31,7 +31,7 @@ def is_reserved(name: str, strict: bool = True) -> bool:
 
     윈도우에서 예약어로 처리되는 경우는 주로 다음과 같습니다.
     * 예약어와 정확히 일치하는 경우. 이때 대소문자는 구분되지 않으며 대소문자가 섞이더라도 무관.
-    * (윈도우 10의 경우, strict=True일때 확인됨) 예약어로 시작해서 예약어 바로 뒤에 마침표가 오는 경우.
+    * (윈도우 10의 경우, strict=True일때 확인됨) 예약어로 시작해서 예약어 바로 뒤에 마침표나 스페이스가 오는 경우.
 
     Args:
         name: 예약어인지 확인할 파일명입니다.
@@ -60,11 +60,13 @@ def is_reserved(name: str, strict: bool = True) -> bool:
     if not strict:
         return False
 
-    if name_upper[:4] in reserved_names:
-        return name_upper[4] == "."
+    first_four = name_upper[:4]
+    if first_four in reserved_names:
+        # COM0과 LPT0는 뒤에 스페이스가 오는 경우에는 전혀 알 수 없는 이유로 생성을 허용함(???)
+        return name_upper[4] == "." if first_four in {"COM0", "LPT0"} else name_upper[4] in (".", " ")
 
     if name_upper[:3] in reserved_names:
-        return name_upper[3] == "."
+        return name_upper[3] in (".", " ")
 
     return False
 
