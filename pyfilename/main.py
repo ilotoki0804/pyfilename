@@ -120,10 +120,10 @@ def is_safe(name: str, strict: bool = True) -> bool:
     """
     # sourcery skip
 
-    if not is_creatable(name, strict):
+    if name.endswith(".") or name.endswith(" "):
         return False
 
-    if name.endswith(".") or name.endswith(" "):
+    if not is_creatable(name, strict):
         return False
 
     if not strict:
