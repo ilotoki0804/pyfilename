@@ -18,6 +18,7 @@ classifiers = [
 Repository = "https://github.com/ilotoki0804/pyfilename"
 Issues = "https://github.com/ilotoki0804/pyfilename/issues"
 Changelog = "https://github.com/ilotoki0804/pyfilename#relese-note"
+Funding = "https://toss.me/ilotoki"
 
 [tool.poetry.dependencies]
 python = "^3.9"
