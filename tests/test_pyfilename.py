@@ -4,11 +4,23 @@ from pyfilename import (
     convert,
     is_creatable,
     is_reserved,
-    is_safe,
     revert,
+)
+from pyfilename import (
+    is_safe as _is_safe,
 )
 
 # fmt: off
+
+def check_validity_in_covert_too(func):
+    def inner(path, *args, **kwargs):
+        assert _is_safe(convert(path))
+        return func(path, *args, **kwargs)
+    return inner
+
+is_reserved = check_validity_in_covert_too(is_reserved)
+is_creatable = check_validity_in_covert_too(is_creatable)
+is_safe = check_validity_in_covert_too(_is_safe)
 
 
 def test_is_name_reserved():
@@ -23,6 +35,7 @@ def test_is_name_reserved():
     assert is_reserved("CoM0.txt")
     assert is_reserved("CoM1   .txt")
     assert is_reserved("COM0.")
+    assert not is_reserved("CoM1   txt")
     assert not is_reserved("CoM0   .txt")
     assert not is_reserved("hello")
     assert not is_reserved("NUL.txt", strict=False)
@@ -37,12 +50,12 @@ def test_is_creatable():
     assert is_creatable("안녕하세요")
     assert is_creatable("안녕하세요  ")
     assert is_creatable("안녕하세요  ...  ")
+    assert is_creatable("NUL.txt", strict=False)
     assert not is_creatable("")
     assert not is_creatable(" ...   ....  .")
     assert not is_creatable(".. ? .... .. .   ")
     assert not is_creatable("NUL.txt")
     assert not is_creatable("NUL.")
-    assert is_creatable("NUL.txt", strict=False)
 
 
 def test_is_name_safe():
