@@ -44,31 +44,17 @@ def is_reserved(name: str, strict: bool = True) -> bool:
     """
     # sourcery skip
 
-    reserved_names = RESERVED if strict else RESERVED_WIN11
-    # `NUL.`의 경우 마침표가 없어진 후 `NUL`이 되어 예약어임.
-    # `NUL   `의 경우 스페이스가 없어진 수 `NUL`이 되어 예약어임.
-    # 이 경우에는 윈도우 11도 적용됨.
-    # 따라서 `rstrip`이 필요.
-    name_upper = name.upper().rstrip(". ")
     if strict:
-        # `   NUL`의 경우 윈도우 10에서는 `NUL`이 되어 예약어임.
-        name_upper = name_upper.lstrip(" ")
+        processed_name = name.partition(".")[0].strip(" ").upper()
+        if processed_name in RESERVED:
+            # COM0과 LPT0는 뒤에 스페이스가 오는 경우에는 전혀 알 수 없는 이유로 생성을 허용함(???)
+            if processed_name in {"COM0", "LPT0"}:
+                return len(name) <= 4 or name[4] == "."
+            return True
 
-    if name_upper in reserved_names:
-        return True
-
-    if not strict:
         return False
 
-    first_four = name_upper[:4]
-    if first_four in reserved_names:
-        # COM0과 LPT0는 뒤에 스페이스가 오는 경우에는 전혀 알 수 없는 이유로 생성을 허용함(???)
-        return name_upper[4] == "." if first_four in {"COM0", "LPT0"} else name_upper[4] in (".", " ")
-
-    if name_upper[:3] in reserved_names:
-        return name_upper[3] in (".", " ")
-
-    return False
+    return name.upper().rstrip(". ") in RESERVED_WIN11
 
 
 def is_creatable(name: str, strict: bool = True) -> bool:
@@ -123,16 +109,16 @@ def is_safe(name: str, strict: bool = True) -> bool:
     """
     # sourcery skip
 
-    if name.endswith(".") or name.endswith(" "):
+    if not name:
         return False
 
-    if not is_creatable(name, strict):
+    if strict and name[0] == " ":
         return False
 
-    if not strict:
-        return True
+    if name[-1] in (".", " "):
+        return False
 
-    return not name.startswith(" ")
+    return is_creatable(name, strict)
 
 
 def revert(name: str) -> str:
