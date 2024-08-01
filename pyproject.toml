@@ -27,7 +27,8 @@ python = "^3.9"
 pyfilename = "WebtoonScraper:__main__.main"
 
 [tool.poetry.group.dev.dependencies]
-ruff = "^0.3.7"
+simplebuilder = "^0.3.0"
+ruff = "^0.5.5"
 pytest = "^8.1.1"
 pytest-cov = "^5.0.0"
 
