@@ -42,8 +42,6 @@ def is_reserved(name: str, strict: bool = True) -> bool:
             또한 위에서 설명되었듯이 윈도우 11에서는 예약어로 시작해서 예약어 바로 뒤에 마침표가 오는 경우도 따로 검사하지 않습니다.
             윈도우 10을 사용하는 다른 컴퓨터들과의 호환성을 위해 항상 True로 두는 것을 추천합니다.
     """
-    # sourcery skip
-
     if strict:
         processed_name = name.partition(".")[0].strip(" ").upper()
         if processed_name in RESERVED:
@@ -75,8 +73,6 @@ def is_creatable(name: str, strict: bool = True) -> bool:
         strict: 윈도우 10과 11에서 모두 생성 가능한지 확인합니다.
             윈도우 11을 사용하더라도 다른 컴퓨터와의 호환성을 유지하기 위해 이 값은 True로 두는 것을 권장합니다.
     """
-    # sourcery skip
-
     if is_reserved(name, strict):
         return False
 
@@ -107,8 +103,6 @@ def is_safe(name: str, strict: bool = True) -> bool:
         strict: 윈도우 10의 조금 더 강력한 예약어 사용 제한을 사용하고, 이름 앞에 스페이스가 오는 것을 허용합니다.
             윈도우 11을 사용하더라도 다른 컴퓨터와의 호환성을 유지하기 위해 이 값은 True로 두는 것을 권장합니다.
     """
-    # sourcery skip
-
     if not name:
         return False
 
@@ -213,8 +207,6 @@ def convert(
             when_empty에 속한 문자열이 문자열에서 사용 가능한지 반드시 확인해 보세요.
             만약 확신하지 못한다면 반드시 when_empty의 문자열을 convert하세요.
     """
-    # sourcery skip
-
     name = (
         name.translate(
             TRANSLATION_TABLE_FULLWIDTH if mode == "fullwidth" else TRANSLATION_TABLE
