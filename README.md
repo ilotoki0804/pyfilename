@@ -1,5 +1,14 @@
 # pyfilename
 
+[![Sponsoring](https://img.shields.io/badge/Github_Sponsor-blue?logo=githubsponsors&logoColor=white&labelColor=gray)](https://github.com/sponsors/ilotoki0804)
+[![Hits](https://hits.seeyoufarm.com/api/count/incr/badge.svg?url=https%3A%2F%2Fgithub.com%2Filotoki0804%2Fpyfilename&count_bg=%2379C83D&title_bg=%23555555&icon=&icon_color=%23E7E7E7&title=hits&edge_flat=false)](https://github.com/ilotoki0804/pyfilename)
+[![Coverage Status](https://coveralls.io/repos/github/ilotoki0804/pyfilename/badge.svg?branch=master)](https://coveralls.io/github/ilotoki0804/pyfilename?branch=master)
+[![PyPI - Downloads](https://img.shields.io/pypi/dm/pyfilename)](https://pypi.org/project/pyfilename/)
+[![image](https://img.shields.io/pypi/l/pyfilename.svg)](https://github.com/ilotoki0804/pyfilename/blob/main/LICENSE)
+[![image](https://img.shields.io/pypi/pyversions/pyfilename.svg)](https://pypi.org/project/pyfilename/)
+[![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/ilotoki0804/pyfilename/blob/main/pyproject.toml)
+[![uv](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/uv/main/assets/badge/v0.json)](https://github.com/ilotoki0804/pyfilename/blob/main/pyproject.toml)
+
 **Make names comply various filename constraints of Windows.**
 
 **윈도우의 복잡한 파일명 제한들을 만족시키는 안전한 이름을 만듭니다.**
@@ -19,7 +28,7 @@ pip을 통해 이 프로젝트를 설치할 수 있습니다.
 pip install -U pyfilename
 ```
 
-## Functions that pyfilename have
+## Features
 
 아래에서는 pyfilename에 있는 함수들을 간단히 설명합니다.
 
@@ -58,6 +67,7 @@ pyfilename은 전체 경로가 아닌 파일명을 확인하는 라이브러리�
 
 ## Relese Note
 
+* 0.6.0 (2024/10/12): 빌드 현대화 및 기타 기능 및 문서 개선
 * 0.5.1 (2024/04/15): 잘못 표기된 호환 버전 표시 수정
 * _yanked_ 0.5.0 (2024/04/15): 현대화 및 전체적인 개선 및 오류 수정 >> 0.5.1 사용하세요!
 * 0.2.0 (2023/09/10): 전체적인 구현 변경
