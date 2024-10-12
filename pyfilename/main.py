@@ -8,7 +8,7 @@ TRANSLATION_TABLE_FULLWIDTH = {i: 0 for i in range(32)} | str.maketrans(
     '\\/:*?"<>|', "⧵／：＊？＂＜＞∣"
 )
 TRANSLATION_TABLE = {i: 0 for i in range(32)} | str.maketrans('\\/:*?"<>|', "\x00" * 9)
-FORBIDDEN_CHARS = set('\\/:*?"<>|')
+FORBIDDEN_CHARS = set('\\/:*?"<>|').union(chr(i) for i in range(32))
 FULLWIDTH_TABLE_REVERT = str.maketrans("⧵／：＊？＂＜＞∣．", '\\/:*?"<>|.')
 
 # check https://learn.microsoft.com/en-us/windows/win32/fileio/naming-a-file
