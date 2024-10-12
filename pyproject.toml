@@ -1,8 +1,10 @@
-[tool.poetry]
+[project]
 name = "pyfilename"
 version = "0.5.1"
 description = "Make names comply various filename constraints of Windows."
-authors = ["ilotoki0804 <ilotoki0804@gmail.com>"]
+authors = [
+    {name = "ilotoki0804", email = "ilotoki0804@gmail.com"},
+]
 license = "MIT"
 readme = "README.md"
 keywords = ["files", "file", "windows"]
@@ -12,26 +14,34 @@ classifiers = [
     "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+]
+requires-python = ">=3.9"
+dependencies = []
+
+[project.urls]
+Repository = "https://github.com/ilotoki0804/pyfilename"
+Funding = "https://github.com/sponsors/ilotoki0804"
+
+[tool.hatch.build.targets.wheel]
+packages = ["pyfilename"]
+
+[tool.ruff]
+line-length = 120
+
+[tool.ruff.lint]
+select = ["E", "F", "UP", "W"]
+ignore = ["E501", "F401", "E999", "F405", "F403", "E402", "S101", "F841"]
+
+[tool.uv]
+dev-dependencies = [
+    "ipykernel>=6.29.5",
+    "pytest>=8.3.3",
+    "pytest-cov>=5.0.0",
+    "simplebuilder>=0.4.0",
 ]
 
-[tool.poetry.urls]
-Repository = "https://github.com/ilotoki0804/pyfilename"
-Issues = "https://github.com/ilotoki0804/pyfilename/issues"
-Changelog = "https://github.com/ilotoki0804/pyfilename#relese-note"
-Funding = "https://toss.me/ilotoki"
-
-[tool.poetry.dependencies]
-python = "^3.9"
-
-[tool.poetry.scripts]
-pyfilename = "WebtoonScraper:__main__.main"
-
-[tool.poetry.group.dev.dependencies]
-simplebuilder = "^0.3.0"
-ruff = "^0.5.5"
-pytest = "^8.1.1"
-pytest-cov = "^5.0.0"
-
 [build-system]
-requires = ["poetry-core"]
-build-backend = "poetry.core.masonry.api"
+requires = ["hatchling"]
+build-backend = "hatchling.build"
