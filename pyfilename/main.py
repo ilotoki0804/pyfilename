@@ -4,9 +4,7 @@ from typing import Callable, Literal, TypeVar, overload
 
 T = TypeVar("T")
 
-TRANSLATION_TABLE_FULLWIDTH = {i: 0 for i in range(32)} | str.maketrans(
-    '\\/:*?"<>|', "⧵／：＊？＂＜＞∣"
-)
+TRANSLATION_TABLE_FULLWIDTH = {i: 0 for i in range(32)} | str.maketrans('\\/:*?"<>|', "⧵／：＊？＂＜＞∣")
 TRANSLATION_TABLE = {i: 0 for i in range(32)} | str.maketrans('\\/:*?"<>|', "\x00" * 9)
 FORBIDDEN_CHARS = set('\\/:*?"<>|').union(chr(i) for i in range(32))
 FULLWIDTH_TABLE_REVERT = str.maketrans("⧵／：＊？＂＜＞∣．", '\\/:*?"<>|.')
@@ -208,9 +206,7 @@ def convert(
             만약 확신하지 못한다면 반드시 when_empty의 문자열을 convert하세요.
     """
     name = (
-        name.translate(
-            TRANSLATION_TABLE_FULLWIDTH if mode == "fullwidth" else TRANSLATION_TABLE
-        )
+        name.translate(TRANSLATION_TABLE_FULLWIDTH if mode == "fullwidth" else TRANSLATION_TABLE)
         .replace("\x00", "" if mode == "remove" else replacement_char)
         .rstrip()
     )
@@ -233,9 +229,7 @@ def convert(
             if mode not in {"fullwidth", "char", "remove"}:
                 raise TypeError(f"Unknown option for `mode`: {mode!r}")
             else:
-                raise TypeError(
-                    f"Unknown option for `following_dot`: {following_dot!r}"
-                )
+                raise TypeError(f"Unknown option for `following_dot`: {following_dot!r}")
 
     if strict:
         name = name.lstrip(" ")

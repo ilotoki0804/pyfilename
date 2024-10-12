@@ -6,17 +6,16 @@ from pyfilename import (
     is_reserved,
     revert,
 )
-from pyfilename import (
-    is_safe as _is_safe,
-)
+from pyfilename import is_safe as _is_safe
 
-# fmt: off
 
-def check_validity_in_covert_too(func):
+def check_validity_in_covert_too[T](func: T) -> T:
     def inner(path, *args, **kwargs):
         assert _is_safe(convert(path))
-        return func(path, *args, **kwargs)
-    return inner
+        return func(path, *args, **kwargs)  # type: ignore
+
+    return inner  # type: ignore
+
 
 is_reserved = check_validity_in_covert_too(is_reserved)
 is_creatable = check_validity_in_covert_too(is_creatable)
@@ -30,36 +29,36 @@ def test_isreserved_testcase():
     # assert is_safe('..')
     # assert is_safe('/')
     # assert is_safe('/foo/bar')
-    assert not is_safe('foo.')
-    assert not is_safe('foo ')
-    assert not is_safe('\foo')
-    assert not is_safe('foo*bar')
-    assert not is_safe('foo?bar')
+    assert not is_safe("foo.")
+    assert not is_safe("foo ")
+    assert not is_safe("\foo")
+    assert not is_safe("foo*bar")
+    assert not is_safe("foo?bar")
     assert not is_safe('foo"bar')
-    assert not is_safe('foo<bar')
-    assert not is_safe('foo>bar')
-    assert not is_safe('foo:bar')
-    assert not is_safe('foo|bar')
-    assert not is_safe('nul')
-    assert not is_safe('aux')
-    assert not is_safe('prn')
-    assert not is_safe('con')
-    assert not is_safe('conin$')
-    assert not is_safe('conout$')
-    assert not is_safe('COM1')
-    assert not is_safe('LPT9')
-    assert not is_safe('com\xb9')
-    assert not is_safe('com\xb2')
-    assert not is_safe('lpt\xb3')
-    assert not is_safe('NUL.txt')
-    assert not is_safe('PRN  ')
-    assert not is_safe('AUX  .txt')
-    assert not is_safe('COM1:bar')
-    assert not is_safe('LPT9   :bar')
-    assert is_safe('bar.com9')
-    assert is_safe('bar.lpt9')
-    assert not is_safe('c:/bar/baz/NUL')
-    assert not is_safe('c:/NUL/bar/baz')
+    assert not is_safe("foo<bar")
+    assert not is_safe("foo>bar")
+    assert not is_safe("foo:bar")
+    assert not is_safe("foo|bar")
+    assert not is_safe("nul")
+    assert not is_safe("aux")
+    assert not is_safe("prn")
+    assert not is_safe("con")
+    assert not is_safe("conin$")
+    assert not is_safe("conout$")
+    assert not is_safe("COM1")
+    assert not is_safe("LPT9")
+    assert not is_safe("com\xb9")
+    assert not is_safe("com\xb2")
+    assert not is_safe("lpt\xb3")
+    assert not is_safe("NUL.txt")
+    assert not is_safe("PRN  ")
+    assert not is_safe("AUX  .txt")
+    assert not is_safe("COM1:bar")
+    assert not is_safe("LPT9   :bar")
+    assert is_safe("bar.com9")
+    assert is_safe("bar.lpt9")
+    assert not is_safe("c:/bar/baz/NUL")
+    assert not is_safe("c:/NUL/bar/baz")
     # assert is_safe('//./NUL')
     # assert is_safe(b'')
     # assert is_safe(b'.')
@@ -68,6 +67,7 @@ def test_isreserved_testcase():
     # assert is_safe(b'/foo/bar')
     # assert not is_safe(b'foo.')
     # assert not is_safe(b'nul')
+
 
 def test_is_name_reserved():
     assert is_reserved("NUL")
@@ -128,11 +128,27 @@ def test_sanitize():
     assert convert("   ... . . .   . .   . ", when_empty=None) == "... . . .   . .   ．"
     assert convert("   ... . . .   . .   . ", following_dot="remove", when_empty=None) is None
     assert convert("   ????hello.????txt", mode="char", when_empty=None) == "hello.    txt"
-    assert convert("   ????hello.????txt...........", mode="char", replacement_char=";") == ";;;;hello.;;;;txt..........;"
-    assert convert("   ????hello.????txt...........", mode="fullwidth", following_dot="char", replacement_char=";") == "？？？？hello.？？？？txt..........;"
+    assert (
+        convert("   ????hello.????txt...........", mode="char", replacement_char=";") == ";;;;hello.;;;;txt..........;"
+    )
+    assert (
+        convert("   ????hello.????txt...........", mode="fullwidth", following_dot="char", replacement_char=";")
+        == "？？？？hello.？？？？txt..........;"
+    )
     assert convert("   ????hello.????txt", mode="remove", when_empty=None) == "hello.txt"
-    assert convert("   ????hello.????txt....", mode="remove", following_dot="no_correct", when_empty=None) == "hello.txt...."
-    assert convert("NUL.   ????hello.????txt....", mode="remove", following_dot="no_correct", when_reserved=lambda name: f"The name is reserved. Sorry! Original name: {name}") == "The name is reserved. Sorry! Original name: NUL.   hello.txt...."
+    assert (
+        convert("   ????hello.????txt....", mode="remove", following_dot="no_correct", when_empty=None)
+        == "hello.txt...."
+    )
+    assert (
+        convert(
+            "NUL.   ????hello.????txt....",
+            mode="remove",
+            following_dot="no_correct",
+            when_reserved=lambda name: f"The name is reserved. Sorry! Original name: {name}",
+        )
+        == "The name is reserved. Sorry! Original name: NUL.   hello.txt...."
+    )
 
     with pytest.raises(TypeError):
         convert("hello?.txt.", mode="any")  # type: ignore
