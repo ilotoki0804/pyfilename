@@ -1,6 +1,6 @@
 [project]
 name = "pyfilename"
-version = "0.6.0.post1"
+version = "0.6.1"
 description = "Make names comply various filename constraints of Windows."
 authors = [
     {name = "ilotoki0804", email = "ilotoki0804@gmail.com"},
